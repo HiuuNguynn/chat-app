@@ -1,19 +1,21 @@
 import mongoose from "mongoose";
-import { messagesDB } from "../db/connectToMongoDB.js";
+import { connectToMongoDB } from "../db/connectToMongoDB.js";
+
+// Đảm bảo kết nối MongoDB trước khi sử dụng
+let { messagesDB } = await connectToMongoDB();
+if (!messagesDB) {
+    throw new Error("MongoDB MESSAGES connection has not been initialized.");
+}
 
 const messageSchema = new mongoose.Schema(
-	{
-		sender: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-		receiver: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-		content: { type: String, required: true },
-	},
-	{ timestamps: true }
+    {
+        senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+        receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+        message: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+    },
+    { timestamps: true }
 );
-
-// Kiểm tra kết nối MESSAGES MongoDB
-if (!messagesDB) {
-	throw new Error("❌ MongoDB MESSAGES connection has not been initialized.");
-}
 
 const Message = messagesDB.model("Message", messageSchema);
 
