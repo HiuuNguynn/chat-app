@@ -1,29 +1,19 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
-dotenv.config(); // Load biến môi trường từ .env
+dotenv.config();
 
 const connectToMongoDB = async () => {
 	try {
-		const usersDB = await mongoose.createConnection(process.env.MONGO_USERS_URI, {
-			useNewUrlParser: true,
-			useUnifiedTopology: true,
-		});
+		// Kết nối MongoDB USERS
+		global.usersDB = mongoose.createConnection(process.env.MONGO_USERS_URI);
 		console.log("✅ Connected to USERS MongoDB");
 
-		const messagesDB = await mongoose.createConnection(process.env.MONGO_MESSAGES_URI, {
-			useNewUrlParser: true,
-			useUnifiedTopology: true,
-		});
+		// Kết nối MongoDB MESSAGES
+		global.messagesDB = mongoose.createConnection(process.env.MONGO_MESSAGES_URI);
 		console.log("✅ Connected to MESSAGES MongoDB");
-
-		// Lưu kết nối vào global
-		global.usersDB = usersDB;
-		global.messagesDB = messagesDB;
-		
-		return { usersDB, messagesDB };
 	} catch (error) {
-		console.log("❌ Error connecting to MongoDB:", error.message);
+		console.error("❌ Error connecting to MongoDB:", error.message);
 		process.exit(1);
 	}
 };
