@@ -1,5 +1,5 @@
 import daisyui from "daisyui"
-module.export = {
+export default{
 	content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
 	theme: {
 		extend: {},
