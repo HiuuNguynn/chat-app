@@ -1,38 +1,35 @@
-import path from "path";
-import express from "express";
+import mongoose from "mongoose";
 import dotenv from "dotenv";
-import cookieParser from "cookie-parser";
-
-import authRoutes from "./routes/auth.routes.js";
-import messageRoutes from "./routes/message.routes.js";
-import userRoutes from "./routes/user.routes.js";
-
-import connectToMongoDB from "./db/connectToMongoDB.js";
-
-import { app, server } from "./socket/socket.js";
 
 dotenv.config();
 
-const __dirname = path.resolve();
-const PORT = process.env.PORT || 5000;
+let usersDB, messagesDB;
 
-app.use(express.json());
-app.use(cookieParser());
+const connectToMongoDB = async () => {
+	try {
+		// Kết nối USERS Database
+		usersDB = await mongoose.createConnection(process.env.MONGO_USERS_URI, {
+			useNewUrlParser: true,
+			useUnifiedTopology: true,
+			serverSelectionTimeoutMS: 5000, // Giới hạn thời gian chờ kết nối
+			tls: true
+		});
+		console.log("✅ Connected to USERS MongoDB");
 
-app.use("/api/auth", authRoutes);
-app.use("/api/messages", messageRoutes);
-app.use("/api/users", userRoutes);
+		// Kết nối MESSAGES Database
+		messagesDB = await mongoose.createConnection(process.env.MONGO_MESSAGES_URI, {
+			useNewUrlParser: true,
+			useUnifiedTopology: true,
+			serverSelectionTimeoutMS: 5000,
+			tls: true
+		});
+		console.log("✅ Connected to MESSAGES MongoDB");
 
-app.use(express.static(path.join(__dirname, "/frontend/dist")));
+		return { usersDB, messagesDB };
+	} catch (error) {
+		console.error("❌ Error connecting to MongoDB:", error.message);
+		process.exit(1);
+	}
+};
 
-app.get("*", (req, res) => {
-	res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
-});
-
-// Kết nối MongoDB khi server khởi chạy
-
-connectToMongoDB().then(() => {
-	server.listen(PORT, () => {
-		console.log(`🚀 Server Running on port ${PORT}`);
-	});
-});
+export { connectToMongoDB, usersDB, messagesDB };
