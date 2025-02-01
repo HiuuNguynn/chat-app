@@ -1,53 +1,50 @@
+import path from "path";
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import { createServer } from "http";
-import { Server } from "socket.io";
-
+import connectToMongoDB from "./db/connectToMongoDB.js";
 import authRoutes from "./routes/auth.routes.js";
 import messageRoutes from "./routes/message.routes.js";
 import userRoutes from "./routes/user.routes.js";
-
-import { connectToMongoDB } from "./db/connectToMongoDB.js";
+import { app, server } from "./socket/socket.js";
 
 dotenv.config();
 
-const app = express();
-const server = createServer(app);
-const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-    },
-});
+const __dirname = path.resolve();
+const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(express.json());
-app.use(cookieParser());
-
-const startServer = async () => {
+// ✅ Kết nối MongoDB trước khi server lắng nghe
+(async () => {
     try {
-        // Kết nối đến MongoDB trước khi chạy server
-        const { usersDB, messagesDB } = await connectToMongoDB();
-
-        if (!usersDB || !messagesDB) {
-            throw new Error("MongoDB connections failed.");
-        }
-
-        console.log("✅ MongoDB connections established. Starting server...");
-
-        // Routes
-        app.use("/api/auth", authRoutes);
-        app.use("/api/messages", messageRoutes);
-        app.use("/api/users", userRoutes);
-
-        const PORT = process.env.PORT || 5000;
+        await connectToMongoDB();
+        console.log("✅ MongoDB connections established.");
+        
         server.listen(PORT, () => {
             console.log(`🚀 Server Running on port ${PORT}`);
         });
     } catch (error) {
-        console.error("❌ Failed to start server:", error);
+        console.error("❌ MongoDB Connection Error:", error.message);
+        process.exit(1); // Thoát nếu không thể kết nối database
     }
-};
+})();
 
-startServer();
+// Middleware
+app.use(express.json()); 
+app.use(cookieParser());
+
+// API Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/users", userRoutes);
+
+// ✅ Route mặc định để test server hoạt động
+app.get("/", (req, res) => {
+    res.send("🔥 API is running! 🔥");
+});
+
+// ✅ Cấu hình để phục vụ frontend từ thư mục `/frontend/dist`
+app.use(express.static(path.join(__dirname, "/frontend/dist")));
+
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
+});
