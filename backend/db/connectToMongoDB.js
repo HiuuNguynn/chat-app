@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
+// Load biến môi trường từ file .env
 dotenv.config();
 
 let usersDB = null;
@@ -8,6 +9,10 @@ let messagesDB = null;
 
 const connectToMongoDB = async () => {
     try {
+        if (!process.env.MONGO_USERS_URI || !process.env.MONGO_MESSAGES_URI) {
+            throw new Error("❌ Missing MongoDB URIs in .env file!");
+        }
+
         if (!usersDB) {
             usersDB = await mongoose.createConnection(process.env.MONGO_USERS_URI, {
                 serverSelectionTimeoutMS: 5000,

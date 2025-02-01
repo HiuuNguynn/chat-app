@@ -1,4 +1,3 @@
-import path from "path";
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -28,20 +27,19 @@ app.use(cookieParser());
 
 const startServer = async () => {
     try {
-        await connectToMongoDB(); // Đảm bảo kết nối MongoDB trước khi sử dụng models
+        // Kết nối đến MongoDB trước khi chạy server
+        const { usersDB, messagesDB } = await connectToMongoDB();
+
+        if (!usersDB || !messagesDB) {
+            throw new Error("MongoDB connections failed.");
+        }
+
+        console.log("✅ MongoDB connections established. Starting server...");
 
         // Routes
         app.use("/api/auth", authRoutes);
         app.use("/api/messages", messageRoutes);
         app.use("/api/users", userRoutes);
-
-        // Serve frontend
-        const __dirname = path.resolve();
-        app.use(express.static(path.join(__dirname, "/frontend/dist")));
-
-        app.get("*", (req, res) => {
-            res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
-        });
 
         const PORT = process.env.PORT || 5000;
         server.listen(PORT, () => {
